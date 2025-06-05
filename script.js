@@ -1,12 +1,12 @@
 // 1. Define the board variable
 const board = [
-    [-1,-1, 1, 1, 1,-1,-1], // Row 0
-    [-1, 1, 1, 1, 1, 1,-1], // Row 1: pegs at [1,1] and [1,5]
-    [ 1, 1, 1, 1, 1, 1, 1], // Row 2
-    [ 1, 1, 1, 0, 1, 1, 1], // Row 3: center hole at [3,3]
-    [ 1, 1, 1, 1, 1, 1, 1], // Row 4
-    [-1, 1, 1, 1, 1, 1,-1], // Row 5: pegs at [5,1] and [5,5]
-    [-1,-1, 1, 1, 1,-1,-1]  // Row 6
+    [-1, -1, 1, 1, 1, -1, -1],
+    [-1, -1, 1, 1, 1, -1, -1],
+    [ 1, 1, 1, 1, 1, 1, 1],
+    [ 1, 1, 1, 0, 1, 1, 1], // Center is initially empty
+    [ 1, 1, 1, 1, 1, 1, 1],
+    [-1, -1, 1, 1, 1, -1, -1],
+    [-1, -1, 1, 1, 1, -1, -1]
 ];
 
 // 2. Implement displayBoard function
@@ -108,7 +108,9 @@ function isGameWon(board) {
 }
 
 // 9. Implement solve function (recursive backtracking)
-function solve(currentBoard, currentPath) {
+function solve(currentBoard, currentPath, stats) {
+    stats.exploredPaths++; // Increment for each board state explored
+
     if (isGameWon(currentBoard)) {
         return true; // Base Case 1: Win
     }
@@ -123,7 +125,8 @@ function solve(currentBoard, currentPath) {
         const nextBoard = makeMove(currentBoard, move);
         currentPath.push(move);
 
-        if (solve(nextBoard, currentPath)) {
+        // Pass 'stats' object through recursive calls
+        if (solve(nextBoard, currentPath, stats)) {
             return true; // Solution found down this path
         } else {
             currentPath.pop(); // Backtrack: remove the last move
@@ -236,13 +239,13 @@ function renderSolution(path, containerElement) {
 // For simplicity, let's use the global 'board' as the starting point, assuming it's the standard initial setup.
 // Or, to be absolutely sure, we can redefine it here:
 let initialBoard = [
-    [-1,-1, 1, 1, 1,-1,-1], // Row 0
-    [-1, 1, 1, 1, 1, 1,-1], // Row 1: pegs at [1,1] and [1,5]
-    [ 1, 1, 1, 1, 1, 1, 1], // Row 2
-    [ 1, 1, 1, 0, 1, 1, 1], // Row 3: center hole at [3,3]
-    [ 1, 1, 1, 1, 1, 1, 1], // Row 4
-    [-1, 1, 1, 1, 1, 1,-1], // Row 5: pegs at [5,1] and [5,5]
-    [-1,-1, 1, 1, 1,-1,-1]  // Row 6
+    [-1, -1, 1, 1, 1, -1, -1],
+    [-1, -1, 1, 1, 1, -1, -1],
+    [ 1, 1, 1, 1, 1, 1, 1],
+    [ 1, 1, 1, 0, 1, 1, 1], // Center is initially empty
+    [ 1, 1, 1, 1, 1, 1, 1],
+    [-1, -1, 1, 1, 1, -1, -1],
+    [-1, -1, 1, 1, 1, -1, -1]
 ];
 
 
@@ -273,12 +276,14 @@ document.addEventListener('DOMContentLoaded', () => {
             // ensuring the original initialBoard is untouched for subsequent clicks.
             let boardToSolve = initialBoard.map(row => [...row]);
 
+            let stats = { exploredPaths: 0 }; // Initialize stats object
+
             const startTime = performance.now();
-            let foundSolution = solve(boardToSolve, currentSolutionPath);
+            let foundSolution = solve(boardToSolve, currentSolutionPath, stats); // Pass stats object
             const endTime = performance.now();
 
             if (foundSolution) {
-                statusMessageContainer.textContent = `Solution Found in ${(endTime - startTime).toFixed(2)} ms! (${currentSolutionPath.length} moves)`;
+                statusMessageContainer.textContent = `Solution Found in ${(endTime - startTime).toFixed(2)} ms! (${currentSolutionPath.length} moves, ${stats.exploredPaths} paths explored)`;
                 renderSolution(currentSolutionPath, solutionStepsContainer);
 
                 // Display the final board state
@@ -292,7 +297,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 renderBoard(finalBoardState, boardContainer);
 
             } else {
-                statusMessageContainer.textContent = 'No solution found from this configuration.';
+                statusMessageContainer.textContent = `No solution found after exploring ${stats.exploredPaths} paths.`;
                 // Re-render the initial board if no solution is found, as the board displayed might be an intermediate one
                 // if we were to display intermediate steps during solving (which we are not currently).
                 // For now, the board remains the initialBoard if no solution is found.
