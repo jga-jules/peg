@@ -1,0 +1,128 @@
+body {
+    font-family: Arial, sans-serif;
+    margin: 20px;
+    background-color: #f4f4f4;
+    color: #333;
+    text-align: center;
+}
+
+h1 {
+    color: #555;
+}
+
+h2 {
+    color: #666;
+    margin-top: 30px;
+}
+
+#board-container {
+    display: grid; /* Already set by JS, but good to have in CSS */
+    /* grid-template-columns: repeat(7, 40px); JS handles this based on board size */
+    /* grid-template-rows: repeat(7, 40px); JS handles this */
+    gap: 3px;
+    padding: 5px;
+    background-color: #deb887; /* Wooden color for the board background */
+    border: 5px solid #8b4513; /* Darker wood border */
+    border-radius: 10px;
+    box-shadow: 0 0 10px rgba(0,0,0,0.2);
+    /* Width and margin are set by JS to center, can be adjusted here if needed */
+    margin-bottom: 20px;
+}
+
+/* Styles for individual cells, dynamically created by JS */
+/* We'll use classes to make it cleaner if JS adds them,
+   but for now, JS applies direct styles.
+   This CSS provides fallback or can be used if JS is refactored to use classes.
+*/
+
+/* Example classes if JS were to add them: */
+.cell {
+    width: 40px; /* Should match JS */
+    height: 40px; /* Should match JS */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-sizing: border-box;
+    border-radius: 50%; /* Make cells circular */
+}
+
+.peg { /* If JS added class="cell peg" */
+    background-color: #8b4513; /* Dark brown for pegs */
+    border: 1px solid #5a2d0c;
+    color: white; /* For the peg character if used */
+}
+
+.hole { /* If JS added class="cell hole" */
+    background-color: #f0d9b5; /* Lighter color for empty holes */
+    border: 1px solid #d2b48c;
+}
+
+.off-board { /* If JS added class="cell off-board" */
+    background-color: #deb887; /* Match board background to appear invisible */
+    border: none;
+}
+
+
+/* Since JS applies inline styles for peg/hole/off-board,
+   we can style the divs directly for the general shape if needed,
+   but the JS inline styles will take precedence for background-color.
+   The border-radius for a more peg-like feel is a good addition.
+*/
+#board-container > div { /* General style for all cells created by JS */
+    border-radius: 50%; /* Make all board positions circular */
+    font-size: 1.5em; /* For the peg character */
+    font-weight: bold;
+}
+
+
+#solve-button {
+    background-color: #5cb85c;
+    color: white;
+    padding: 10px 20px;
+    border: none;
+    border-radius: 5px;
+    font-size: 1em;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+}
+
+#solve-button:hover {
+    background-color: #4cae4c;
+}
+
+#solve-button:disabled {
+    background-color: #cccccc;
+    cursor: not-allowed;
+}
+
+#status-message {
+    margin-top: 15px;
+    font-size: 1.1em;
+    min-height: 1.5em; /* Prevent layout shift */
+}
+
+#solution-steps {
+    margin-top: 10px;
+    text-align: left;
+    max-width: 600px;
+    margin-left: auto;
+    margin-right: auto;
+    background-color: #fff;
+    padding: 15px;
+    border-radius: 5px;
+    box-shadow: 0 0 5px rgba(0,0,0,0.1);
+}
+
+#solution-steps ul {
+    list-style-type: none;
+    padding-left: 0;
+}
+
+#solution-steps li {
+    padding: 5px 0;
+    border-bottom: 1px solid #eee;
+}
+
+#solution-steps li:last-child {
+    border-bottom: none;
+}
