@@ -1,12 +1,12 @@
 // 1. Define the board variable
 const board = [
-    [-1, -1, 1, 1, 1, -1, -1],
-    [-1, -1, 1, 1, 1, -1, -1],
-    [ 1, 1, 1, 1, 1, 1, 1],
-    [ 1, 1, 1, 0, 1, 1, 1], // Center is initially empty
-    [ 1, 1, 1, 1, 1, 1, 1],
-    [-1, -1, 1, 1, 1, -1, -1],
-    [-1, -1, 1, 1, 1, -1, -1]
+    [-1,-1, 1, 1, 1,-1,-1], // Row 0
+    [-1, 1, 1, 1, 1, 1,-1], // Row 1: pegs at [1,1] and [1,5]
+    [ 1, 1, 1, 1, 1, 1, 1], // Row 2
+    [ 1, 1, 1, 0, 1, 1, 1], // Row 3: center hole at [3,3]
+    [ 1, 1, 1, 1, 1, 1, 1], // Row 4
+    [-1, 1, 1, 1, 1, 1,-1], // Row 5: pegs at [5,1] and [5,5]
+    [-1,-1, 1, 1, 1,-1,-1]  // Row 6
 ];
 
 // 2. Implement displayBoard function
@@ -108,8 +108,15 @@ function isGameWon(board) {
 }
 
 // 9. Implement solve function (recursive backtracking)
-function solve(currentBoard, currentPath, stats) {
+function solve(currentBoard, currentPath, stats, onStatsUpdate) {
     stats.exploredPaths++; // Increment for each board state explored
+
+    // Call the callback periodically
+    if (stats.exploredPaths % 1000 === 0) { // Adjust frequency as needed
+        if (typeof onStatsUpdate === 'function') {
+            onStatsUpdate(stats);
+        }
+    }
 
     if (isGameWon(currentBoard)) {
         return true; // Base Case 1: Win
@@ -125,8 +132,8 @@ function solve(currentBoard, currentPath, stats) {
         const nextBoard = makeMove(currentBoard, move);
         currentPath.push(move);
 
-        // Pass 'stats' object through recursive calls
-        if (solve(nextBoard, currentPath, stats)) {
+        // Pass 'stats' and 'onStatsUpdate' through recursive calls
+        if (solve(nextBoard, currentPath, stats, onStatsUpdate)) {
             return true; // Solution found down this path
         } else {
             currentPath.pop(); // Backtrack: remove the last move
@@ -231,6 +238,13 @@ function renderSolution(path, containerElement) {
     containerElement.appendChild(ul);
 }
 
+function updateLiveStats(stats) {
+    const statusMessageContainer = getStatusMessageElement(); // Assumes getStatusMessageElement() is already defined
+    if (statusMessageContainer) {
+        statusMessageContainer.textContent = `Exploring... Paths checked: ${stats.exploredPaths}`;
+    }
+}
+
 // --- Main Game Logic and Event Listener ---
 
 // Define the initial board state (as defined in previous steps)
@@ -239,13 +253,13 @@ function renderSolution(path, containerElement) {
 // For simplicity, let's use the global 'board' as the starting point, assuming it's the standard initial setup.
 // Or, to be absolutely sure, we can redefine it here:
 let initialBoard = [
-    [-1, -1, 1, 1, 1, -1, -1],
-    [-1, -1, 1, 1, 1, -1, -1],
-    [ 1, 1, 1, 1, 1, 1, 1],
-    [ 1, 1, 1, 0, 1, 1, 1], // Center is initially empty
-    [ 1, 1, 1, 1, 1, 1, 1],
-    [-1, -1, 1, 1, 1, -1, -1],
-    [-1, -1, 1, 1, 1, -1, -1]
+    [-1,-1, 1, 1, 1,-1,-1], // Row 0
+    [-1, 1, 1, 1, 1, 1,-1], // Row 1: pegs at [1,1] and [1,5]
+    [ 1, 1, 1, 1, 1, 1, 1], // Row 2
+    [ 1, 1, 1, 0, 1, 1, 1], // Row 3: center hole at [3,3]
+    [ 1, 1, 1, 1, 1, 1, 1], // Row 4
+    [-1, 1, 1, 1, 1, 1,-1], // Row 5: pegs at [5,1] and [5,5]
+    [-1,-1, 1, 1, 1,-1,-1]  // Row 6
 ];
 
 
@@ -260,28 +274,27 @@ document.addEventListener('DOMContentLoaded', () => {
     statusMessageContainer.textContent = 'Ready to solve. Click the button!';
 
     solveButton.addEventListener('click', () => {
-        statusMessageContainer.textContent = 'Solving... please wait.';
-        solutionStepsContainer.innerHTML = ''; // Clear previous solution
+        // Set initial message before setTimeout
+        statusMessageContainer.textContent = 'Solver starting... Paths explored will update live.';
+        solutionStepsContainer.innerHTML = '';
         solveButton.disabled = true;
-        // Re-render initial board before solving, using a fresh copy for the solver
-        // This is important because 'solve' might be called multiple times,
-        // and we want to start from the original state.
-        // The 'initialBoard' variable itself is not modified by 'solve' because 'makeMove' creates copies.
         renderBoard(initialBoard, boardContainer);
 
-        // Use a timeout to allow the UI to update before the potentially long-running solve function
         setTimeout(() => {
-            let currentSolutionPath = []; // Use a fresh path array for each solve attempt
-            // Make a deep copy of initialBoard to pass to the solver,
-            // ensuring the original initialBoard is untouched for subsequent clicks.
+            let currentSolutionPath = [];
             let boardToSolve = initialBoard.map(row => [...row]);
+            let stats = { exploredPaths: 0 };
 
-            let stats = { exploredPaths: 0 }; // Initialize stats object
+            // Initial message just before solving starts, possibly overwritten quickly by updateLiveStats
+            statusMessageContainer.textContent = 'Solving... Paths explored: 0';
+
 
             const startTime = performance.now();
-            let foundSolution = solve(boardToSolve, currentSolutionPath, stats); // Pass stats object
+            // Updated call to solve, passing updateLiveStats as the callback
+            let foundSolution = solve(boardToSolve, currentSolutionPath, stats, updateLiveStats);
             const endTime = performance.now();
 
+            // Final messages, these will overwrite the last message from updateLiveStats
             if (foundSolution) {
                 statusMessageContainer.textContent = `Solution Found in ${(endTime - startTime).toFixed(2)} ms! (${currentSolutionPath.length} moves, ${stats.exploredPaths} paths explored)`;
                 renderSolution(currentSolutionPath, solutionStepsContainer);
