@@ -107,8 +107,8 @@ function isGameWon(board) {
     return pegCount === 1 && isPeg(board, 3, 3);
 }
 
-// 9. Implement solve function (recursive backtracking)
-function solve(currentBoard, currentPath, stats, onStatsUpdate) {
+// 9. Implement findAllSolutions function (recursive backtracking)
+function findAllSolutions(currentBoard, currentPath, stats, onStatsUpdate, allSolutionsList) {
     stats.exploredPaths++; // Increment for each board state explored
 
     // Call the callback periodically
@@ -119,28 +119,27 @@ function solve(currentBoard, currentPath, stats, onStatsUpdate) {
     }
 
     if (isGameWon(currentBoard)) {
-        return true; // Base Case 1: Win
+        allSolutionsList.push([...currentPath]); // Found a solution, add it
+        // This path is complete. Allow backtracking by returning.
+        return;
     }
 
     const possibleMoves = getPossibleMoves(currentBoard);
 
     if (possibleMoves.length === 0) {
-        return false; // Base Case 2: Dead End (no moves and not a win)
+        return; // Dead end, backtrack
     }
 
     for (const move of possibleMoves) {
         const nextBoard = makeMove(currentBoard, move);
         currentPath.push(move);
 
-        // Pass 'stats' and 'onStatsUpdate' through recursive calls
-        if (solve(nextBoard, currentPath, stats, onStatsUpdate)) {
-            return true; // Solution found down this path
-        } else {
-            currentPath.pop(); // Backtrack: remove the last move
-        }
-    }
+        findAllSolutions(nextBoard, currentPath, stats, onStatsUpdate, allSolutionsList);
 
-    return false; // No move from currentBoard leads to a solution
+        currentPath.pop(); // Backtrack after exploring this move
+    }
+    // The function doesn't need to return true/false to propagate a single solution found.
+    // It completes when all its branches are explored.
 }
 
 
@@ -281,40 +280,36 @@ document.addEventListener('DOMContentLoaded', () => {
         renderBoard(initialBoard, boardContainer);
 
         setTimeout(() => {
-            let currentSolutionPath = [];
+            let currentSolutionPath = []; // This is used by findAllSolutions as a temporary path builder
             let boardToSolve = initialBoard.map(row => [...row]);
             let stats = { exploredPaths: 0 };
+            let allSolutions = []; // Initialize array to store all solutions
 
             // Initial message just before solving starts, possibly overwritten quickly by updateLiveStats
             statusMessageContainer.textContent = 'Solving... Paths explored: 0';
 
 
             const startTime = performance.now();
-            // Updated call to solve, passing updateLiveStats as the callback
-            let foundSolution = solve(boardToSolve, currentSolutionPath, stats, updateLiveStats);
+            // Call the new findAllSolutions function
+            findAllSolutions(boardToSolve, currentSolutionPath, stats, updateLiveStats, allSolutions);
             const endTime = performance.now();
 
-            // Final messages, these will overwrite the last message from updateLiveStats
-            if (foundSolution) {
-                statusMessageContainer.textContent = `Solution Found in ${(endTime - startTime).toFixed(2)} ms! (${currentSolutionPath.length} moves, ${stats.exploredPaths} paths explored)`;
-                renderSolution(currentSolutionPath, solutionStepsContainer);
+            // New logic to handle results
+            if (allSolutions.length > 0) {
+                // Display message about multiple solutions, but show the first one
+                statusMessageContainer.textContent = `Found ${allSolutions.length} solution(s) in ${(endTime - startTime).toFixed(2)} ms! (${stats.exploredPaths} paths explored). Displaying first solution.`;
+                renderSolution(allSolutions[0], solutionStepsContainer); // Render the first solution's path
 
-                // Display the final board state
-                let finalBoardState = boardToSolve; // boardToSolve was modified by solve (via makeMove) if solution found
-                                                 // Actually, solve does not modify boardToSolve directly, it uses makeMove which returns new boards.
-                                                 // So, we need to reconstruct the final board from the solution path.
-                finalBoardState = initialBoard.map(row => [...row]); // Start fresh
-                currentSolutionPath.forEach(move => {
-                    finalBoardState = makeMove(finalBoardState, move); // makeMove returns a new board
+                // Render the board state for the first solution
+                let firstSolutionBoard = initialBoard.map(row => [...row]); // Start fresh
+                allSolutions[0].forEach(move => {
+                    firstSolutionBoard = makeMove(firstSolutionBoard, move);
                 });
-                renderBoard(finalBoardState, boardContainer);
+                renderBoard(firstSolutionBoard, boardContainer);
 
             } else {
-                statusMessageContainer.textContent = `No solution found after exploring ${stats.exploredPaths} paths.`;
-                // Re-render the initial board if no solution is found, as the board displayed might be an intermediate one
-                // if we were to display intermediate steps during solving (which we are not currently).
-                // For now, the board remains the initialBoard if no solution is found.
-                renderBoard(initialBoard, boardContainer);
+                statusMessageContainer.textContent = `No solutions found after exploring ${stats.exploredPaths} paths.`;
+                renderBoard(initialBoard, boardContainer); // Re-render initial board on failure
             }
             solveButton.disabled = false;
         }, 10); // Small timeout
