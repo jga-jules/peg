@@ -1,12 +1,12 @@
 // 1. Define the board variable
 const board = [
-    [-1,-1, 1, 1, 1,-1,-1], // Row 0
-    [-1, 1, 1, 1, 1, 1,-1], // Row 1: pegs at [1,1] and [1,5]
-    [ 1, 1, 1, 1, 1, 1, 1], // Row 2
-    [ 1, 1, 1, 0, 1, 1, 1], // Row 3: center hole at [3,3]
-    [ 1, 1, 1, 1, 1, 1, 1], // Row 4
-    [-1, 1, 1, 1, 1, 1,-1], // Row 5: pegs at [5,1] and [5,5]
-    [-1,-1, 1, 1, 1,-1,-1]  // Row 6
+    [-1, -1, 1, 1, 1, -1, -1],
+    [-1, -1, 1, 1, 1, -1, -1],
+    [ 1, 1, 1, 1, 1, 1, 1],
+    [ 1, 1, 1, 0, 1, 1, 1], // Center is initially empty
+    [ 1, 1, 1, 1, 1, 1, 1],
+    [-1, -1, 1, 1, 1, -1, -1],
+    [-1, -1, 1, 1, 1, -1, -1]
 ];
 
 // 2. Implement displayBoard function
@@ -253,13 +253,13 @@ function updateLiveStats(stats) {
 // For simplicity, let's use the global 'board' as the starting point, assuming it's the standard initial setup.
 // Or, to be absolutely sure, we can redefine it here:
 let initialBoard = [
-    [-1,-1, 1, 1, 1,-1,-1], // Row 0
-    [-1, 1, 1, 1, 1, 1,-1], // Row 1: pegs at [1,1] and [1,5]
-    [ 1, 1, 1, 1, 1, 1, 1], // Row 2
-    [ 1, 1, 1, 0, 1, 1, 1], // Row 3: center hole at [3,3]
-    [ 1, 1, 1, 1, 1, 1, 1], // Row 4
-    [-1, 1, 1, 1, 1, 1,-1], // Row 5: pegs at [5,1] and [5,5]
-    [-1,-1, 1, 1, 1,-1,-1]  // Row 6
+    [-1, -1, 1, 1, 1, -1, -1],
+    [-1, -1, 1, 1, 1, -1, -1],
+    [ 1, 1, 1, 1, 1, 1, 1],
+    [ 1, 1, 1, 0, 1, 1, 1], // Center is initially empty
+    [ 1, 1, 1, 1, 1, 1, 1],
+    [-1, -1, 1, 1, 1, -1, -1],
+    [-1, -1, 1, 1, 1, -1, -1]
 ];
 
 
