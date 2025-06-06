@@ -108,34 +108,38 @@ function isGameWon(board) {
 }
 
 // 9. Implement findAllSolutions function (recursive backtracking)
-function findAllSolutions(currentBoard, currentPath, stats, allSolutionsList) {
-    stats.exploredPaths++; // Increment for each board state explored
-
-    // The onStatsUpdate call block is removed from here
+function findAllSolutions(currentBoard, currentPath, stats, allSolutionsList, maxSolutions) {
+    stats.exploredPaths++;
 
     if (isGameWon(currentBoard)) {
-        allSolutionsList.push([...currentPath]); // Found a solution, add it
-        // This path is complete. Allow backtracking by returning.
-        return;
+        allSolutionsList.push([...currentPath]); // Add a copy of the current path
+        if (allSolutionsList.length >= maxSolutions) {
+            return true; // Signal to stop searching
+        }
+        return false; // Found a solution, but limit not reached, so continue (by allowing backtracking)
     }
 
     const possibleMoves = getPossibleMoves(currentBoard);
 
     if (possibleMoves.length === 0) {
-        return; // Dead end, backtrack
+        return false; // Dead end, continue searching other branches
     }
 
     for (const move of possibleMoves) {
         const nextBoard = makeMove(currentBoard, move);
         currentPath.push(move);
 
-        // Updated recursive call
-        findAllSolutions(nextBoard, currentPath, stats, allSolutionsList);
+        // Updated recursive call, pass maxSolutions
+        // If a deeper call found enough solutions and returned true, propagate it up.
+        if (findAllSolutions(nextBoard, currentPath, stats, allSolutionsList, maxSolutions)) {
+            currentPath.pop(); // Still need to pop before returning true up the stack
+            return true; // Limit reached, stop this branch and propagate stop signal
+        }
 
-        currentPath.pop(); // Backtrack after exploring this move
+        currentPath.pop(); // Backtrack after exploring this move if limit not reached
     }
-    // The function doesn't need to return true/false to propagate a single solution found.
-    // It completes when all its branches are explored.
+
+    return false; // All moves from this state explored, limit not reached from this branch
 }
 
 
@@ -272,33 +276,34 @@ document.addEventListener('DOMContentLoaded', () => {
             let currentSolutionPath = []; // This is used by findAllSolutions as a temporary path builder
             let boardToSolve = initialBoard.map(row => [...row]);
             let stats = { exploredPaths: 0 };
-            let allSolutions = []; // Initialize array to store all solutions
+            let allSolutions = [];
+            const maxSolutions = 10; // Define the limit
 
-            // Initial message just before solving starts, possibly overwritten quickly by updateLiveStats
-            statusMessageContainer.textContent = 'Solving... Paths explored: 0';
-
+            statusMessageContainer.textContent = `Finding up to ${maxSolutions} solutions... This may take some time. Please wait.`;
 
             const startTime = performance.now();
-            // Call the new findAllSolutions function
-            findAllSolutions(boardToSolve, currentSolutionPath, stats, allSolutions);
+            // Call findAllSolutions with maxSolutions
+            findAllSolutions(boardToSolve, currentSolutionPath, stats, allSolutions, maxSolutions);
             const endTime = performance.now();
 
-            // New logic to handle results
+            // Updated logic for status messages
             if (allSolutions.length > 0) {
-                // Display message about multiple solutions, but show the first one
-                statusMessageContainer.textContent = `Found ${allSolutions.length} solution(s) in ${(endTime - startTime).toFixed(2)} ms! (${stats.exploredPaths} paths explored). Displaying first solution.`;
-                renderSolution(allSolutions[0], solutionStepsContainer); // Render the first solution's path
+                if (allSolutions.length === maxSolutions) {
+                    statusMessageContainer.textContent = `Reached solution limit (${maxSolutions} solutions found) in ${(endTime - startTime).toFixed(2)} ms! (${stats.exploredPaths} paths explored). Displaying first solution.`;
+                } else { // Found solutions, but less than maxSolutions
+                    statusMessageContainer.textContent = `Found ${allSolutions.length} solution(s) (limit was ${maxSolutions}) in ${(endTime - startTime).toFixed(2)} ms! (${stats.exploredPaths} paths explored). Displaying first solution.`;
+                }
+                renderSolution(allSolutions[0], solutionStepsContainer);
 
-                // Render the board state for the first solution
-                let firstSolutionBoard = initialBoard.map(row => [...row]); // Start fresh
+                let firstSolutionBoard = initialBoard.map(row => [...row]);
                 allSolutions[0].forEach(move => {
                     firstSolutionBoard = makeMove(firstSolutionBoard, move);
                 });
                 renderBoard(firstSolutionBoard, boardContainer);
 
-            } else {
-                statusMessageContainer.textContent = `No solutions found after exploring ${stats.exploredPaths} paths.`;
-                renderBoard(initialBoard, boardContainer); // Re-render initial board on failure
+            } else { // No solutions found
+                statusMessageContainer.textContent = `No solutions found (limit was ${maxSolutions}) after exploring ${stats.exploredPaths} paths.`;
+                renderBoard(initialBoard, boardContainer);
             }
             solveButton.disabled = false;
         }, 10); // Small timeout
