@@ -43,29 +43,7 @@ function isEmpty(board, row, col) {
     return isValidPosition(board, row, col) && board[row][col] === 0;
 }
 
-// 6. Implement getPossibleMoves function
-function getPossibleMoves(board) {
-    const moves = [];
-    const directions = [[0, 1], [0, -1], [1, 0], [-1, 0]]; // Right, Left, Down, Up
-
-    for (let r = 0; r < board.length; r++) {
-        for (let c = 0; c < board[r].length; c++) {
-            if (isPeg(board, r, c)) {
-                for (const dir of directions) {
-                    const jumpedR = r + dir[0];
-                    const jumpedC = c + dir[1];
-                    const toR = r + 2 * dir[0];
-                    const toC = c + 2 * dir[1];
-
-                    if (isPeg(board, jumpedR, jumpedC) && isEmpty(board, toR, toC)) {
-                        moves.push({ from: [r, c], over: [jumpedR, jumpedC], to: [toR, toC] });
-                    }
-                }
-            }
-        }
-    }
-    return moves;
-}
+// 6. Implement getPossibleMoves function - MOVED TO solver.worker.js
 
 // 7. Implement makeMove function
 function makeMove(originalBoard, move) {
@@ -94,53 +72,11 @@ console.log("\n--- Initial Board State ---");
 displayBoard(board);
 
 // Test calls for getPossibleMoves and makeMove
-// 8. Implement isGameWon function
-function isGameWon(board) {
-    let pegCount = 0;
-    for (let r = 0; r < board.length; r++) {
-        for (let c = 0; c < board[r].length; c++) {
-            if (isPeg(board, r, c)) {
-                pegCount++;
-            }
-        }
-    }
-    return pegCount === 1 && isPeg(board, 3, 3);
-}
-
-// 9. Implement findAllSolutions function (recursive backtracking)
-function findAllSolutions(currentBoard, currentPath, stats, allSolutionsList, maxSolutions) {
-    stats.exploredPaths++;
-
-    if (isGameWon(currentBoard)) {
-        allSolutionsList.push([...currentPath]); // Add a copy of the current path
-        if (allSolutionsList.length >= maxSolutions) {
-            return true; // Signal to stop searching
-        }
-        return false; // Found a solution, but limit not reached, so continue (by allowing backtracking)
-    }
-
-    const possibleMoves = getPossibleMoves(currentBoard);
-
-    if (possibleMoves.length === 0) {
-        return false; // Dead end, continue searching other branches
-    }
-
-    for (const move of possibleMoves) {
-        const nextBoard = makeMove(currentBoard, move);
-        currentPath.push(move);
-
-        // Updated recursive call, pass maxSolutions
-        // If a deeper call found enough solutions and returned true, propagate it up.
-        if (findAllSolutions(nextBoard, currentPath, stats, allSolutionsList, maxSolutions)) {
-            currentPath.pop(); // Still need to pop before returning true up the stack
-            return true; // Limit reached, stop this branch and propagate stop signal
-        }
-
-        currentPath.pop(); // Backtrack after exploring this move if limit not reached
-    }
-
-    return false; // All moves from this state explored, limit not reached from this branch
-}
+// Solver functions like isGameWon, findAllSolutions, getPossibleMoves
+// have been moved to solver.worker.js.
+// Helper functions like isValidPosition, isPeg, isEmpty, makeMove are kept
+// as they might be used by UI logic (e.g. rendering a solution step-by-step,
+// or if interactive board features were added).
 
 
 // --- Previous Test Calls (Commented out or reduced for solver focus) ---
