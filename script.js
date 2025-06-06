@@ -108,15 +108,10 @@ function isGameWon(board) {
 }
 
 // 9. Implement findAllSolutions function (recursive backtracking)
-function findAllSolutions(currentBoard, currentPath, stats, onStatsUpdate, allSolutionsList) {
+function findAllSolutions(currentBoard, currentPath, stats, allSolutionsList) {
     stats.exploredPaths++; // Increment for each board state explored
 
-    // Call the callback periodically
-    if (stats.exploredPaths % 1000 === 0) { // Adjust frequency as needed
-        if (typeof onStatsUpdate === 'function') {
-            onStatsUpdate(stats);
-        }
-    }
+    // The onStatsUpdate call block is removed from here
 
     if (isGameWon(currentBoard)) {
         allSolutionsList.push([...currentPath]); // Found a solution, add it
@@ -134,7 +129,8 @@ function findAllSolutions(currentBoard, currentPath, stats, onStatsUpdate, allSo
         const nextBoard = makeMove(currentBoard, move);
         currentPath.push(move);
 
-        findAllSolutions(nextBoard, currentPath, stats, onStatsUpdate, allSolutionsList);
+        // Updated recursive call
+        findAllSolutions(nextBoard, currentPath, stats, allSolutionsList);
 
         currentPath.pop(); // Backtrack after exploring this move
     }
@@ -237,13 +233,6 @@ function renderSolution(path, containerElement) {
     containerElement.appendChild(ul);
 }
 
-function updateLiveStats(stats) {
-    const statusMessageContainer = getStatusMessageElement(); // Assumes getStatusMessageElement() is already defined
-    if (statusMessageContainer) {
-        statusMessageContainer.textContent = `Exploring... Paths checked: ${stats.exploredPaths}`;
-    }
-}
-
 // --- Main Game Logic and Event Listener ---
 
 // Define the initial board state (as defined in previous steps)
@@ -273,8 +262,8 @@ document.addEventListener('DOMContentLoaded', () => {
     statusMessageContainer.textContent = 'Ready to solve. Click the button!';
 
     solveButton.addEventListener('click', () => {
-        // Set initial message before setTimeout
-        statusMessageContainer.textContent = 'Solver starting... Paths explored will update live.';
+        // Initial message upon click, before the timeout logic
+        statusMessageContainer.textContent = 'Preparing to find all solutions...';
         solutionStepsContainer.innerHTML = '';
         solveButton.disabled = true;
         renderBoard(initialBoard, boardContainer);
