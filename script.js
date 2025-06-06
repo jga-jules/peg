@@ -280,7 +280,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
             const startTime = performance.now();
             // Call the new findAllSolutions function
-            findAllSolutions(boardToSolve, currentSolutionPath, stats, updateLiveStats, allSolutions);
+            findAllSolutions(boardToSolve, currentSolutionPath, stats, allSolutions);
             const endTime = performance.now();
 
             // New logic to handle results
