@@ -209,49 +209,63 @@ document.addEventListener('DOMContentLoaded', () => {
         renderBoard(initialBoard, boardContainer);
 
         setTimeout(() => {
-            let currentSolutionPath = []; // This is used by findAllSolutions as a temporary path builder
+            // currentSolutionPath, stats, allSolutions are managed by the worker.
             let boardToSolve = initialBoard.map(row => [...row]);
-            let stats = { exploredPaths: 0 };
-            let allSolutions = [];
 
-            // Read and validate maxSolutions from input
             const maxSolutionsInputElement = document.getElementById('maxSolutionsInput');
-            let userInputMaxSolutions = 10; // Default value
+            let userInputMaxSolutions = 10;
             if (maxSolutionsInputElement) {
                 const parsedValue = parseInt(maxSolutionsInputElement.value, 10);
                 if (!isNaN(parsedValue) && parsedValue > 0) {
                     userInputMaxSolutions = parsedValue;
                 } else {
-                    maxSolutionsInputElement.value = '10'; // Reset invalid input to default
+                    maxSolutionsInputElement.value = '10';
                 }
             }
-            const maxSolutions = userInputMaxSolutions; // Final value to use
+            const maxSolutions = userInputMaxSolutions;
 
-            statusMessageContainer.textContent = `Finding up to ${maxSolutions} solution(s)... This may take some time. Please wait.`;
-
+            // Message updated to reflect background processing.
+            statusMessageContainer.textContent = `Solving in background (up to ${maxSolutions} solution(s))... UI will remain responsive.`;
             const startTime = performance.now();
-            findAllSolutions(boardToSolve, currentSolutionPath, stats, allSolutions, maxSolutions);
-            const endTime = performance.now();
 
-            if (allSolutions.length > 0) {
-                if (allSolutions.length === maxSolutions) {
-                    statusMessageContainer.textContent = `Reached solution limit (${maxSolutions} solution(s) found) in ${(endTime - startTime).toFixed(2)} ms! (${stats.exploredPaths} paths explored). Displaying first solution.`;
+            const worker = new Worker('solver.worker.js');
+
+            worker.onmessage = function(event) {
+                const { solutions, stats: workerStats } = event.data;
+                const endTime = performance.now(); // Record end time when results are back
+
+                if (solutions.length > 0) {
+                    if (solutions.length === maxSolutions) {
+                        statusMessageContainer.textContent = `Reached solution limit (${maxSolutions} solution(s) found) in ${(endTime - startTime).toFixed(2)} ms! (${workerStats.exploredPaths} paths explored). Displaying first solution.`;
+                    } else {
+                        statusMessageContainer.textContent = `Found ${solutions.length} solution(s) (limit was ${maxSolutions}) in ${(endTime - startTime).toFixed(2)} ms! (${workerStats.exploredPaths} paths explored). Displaying first solution.`;
+                    }
+                    renderSolution(solutions[0], solutionStepsContainer);
+
+                    let firstSolutionBoard = initialBoard.map(row => [...row]);
+                    solutions[0].forEach(move => {
+                        firstSolutionBoard = makeMove(firstSolutionBoard, move);
+                    });
+                    renderBoard(firstSolutionBoard, boardContainer);
+
                 } else {
-                    statusMessageContainer.textContent = `Found ${allSolutions.length} solution(s) (limit was ${maxSolutions}) in ${(endTime - startTime).toFixed(2)} ms! (${stats.exploredPaths} paths explored). Displaying first solution.`;
+                    statusMessageContainer.textContent = `No solutions found (limit was ${maxSolutions}) after exploring ${workerStats.exploredPaths} paths.`;
+                    renderBoard(initialBoard, boardContainer);
                 }
-                renderSolution(allSolutions[0], solutionStepsContainer);
+                solveButton.disabled = false;
+                worker.terminate(); // Terminate worker once done
+            };
 
-                let firstSolutionBoard = initialBoard.map(row => [...row]);
-                allSolutions[0].forEach(move => {
-                    firstSolutionBoard = makeMove(firstSolutionBoard, move);
-                });
-                renderBoard(firstSolutionBoard, boardContainer);
+            worker.onerror = function(error) {
+                console.error('Worker Error:', error.message, error);
+                statusMessageContainer.textContent = 'An error occurred with the solver. See console for details.';
+                solveButton.disabled = false;
+                worker.terminate(); // Terminate on error too
+            };
 
-            } else {
-                statusMessageContainer.textContent = `No solutions found (limit was ${maxSolutions}) after exploring ${stats.exploredPaths} paths.`;
-                renderBoard(initialBoard, boardContainer);
-            }
-            solveButton.disabled = false;
-        }, 10); // Small timeout
+            // Send data to the worker
+            worker.postMessage({ board: boardToSolve, maxSolutions: maxSolutions });
+
+        }, 10); // Small timeout for initial UI update
     });
 });
